@@ -5,3 +5,5 @@ Diese kleine Django-Webapp visualisiert die Daten der Polizei Berlin von Fahrrad
 Mehr Infos zu den Daten: https://daten.berlin.de/datensaetze/fahrraddiebstahl-berlin
 
 Daten direkt herunterladen unter: https://www.internetwache-polizei-berlin.de/vdb/Fahrraddiebstahl.csv
+
+Presse: https://www.golem.de/news/berlin-polizei-testet-open-data-gegen-fahrradklau-2109-159424.html

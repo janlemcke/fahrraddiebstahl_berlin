@@ -1,0 +1,207 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+    <style>
+    .info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+.info h4 {
+    margin: 0 0 5px;
+    color: #777;
+}
+.legend {
+    line-height: 18px;
+    color: #555;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+    </style>
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Übersichtskarte</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <!--
+          <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>-->
+            <div class="dropdown me-2">
+          <select id="type-picker" class="form-select btn-outline-secondary" onchange="onTypeChange()">
+              <option value="pgr">PGR</option>
+              <option value="bzr">BZR</option>
+              <option value="plr">PLR</option>
+            </select>
+        </div>
+          <div class="dropdown">
+          <select id="date-picker" class="form-select btn-outline-secondary" onchange="onDateChange(this)">
+              <option value="yesterday">Gestern</option>
+              <option value="last_seven">Letzte 7 Tage</option>
+              <option value="this_month">Diesen Monat</option>
+              <option value="all">Insgesamt</option>
+            </select>
+        </div>
+        </div>
+      </div>
+    <p>Die Karte zeigt die angelegten Diebstähle der Polizei Berlin in dem ausgewählten Zeitraum nach dem gewünschten Detailsgrad (PGR, BZR, PLR).</p>
+    {% if data_unavailable == 0%}
+    <table id="missing-table" class="table">
+            <tr>
+                <td colspan="5" class="text-center">Keine Daten von gestern vorhanden. Die Daten werden um 12:00
+                    aktualisiert.
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+    <div class="my-4 w-100" id="map" style="height: 600px;"></div>
+</main>
+
+<script>
+
+    function onTypeChange(){
+        onDateChange(document.getElementById("date-picker"));
+    }
+
+    function fetchData(startDate, endDate, type){
+        fetch('/api/geojson?start='+startDate+'&end='+endDate+"&type="+type)
+        .then(response => response.json())
+        .then(function (data) {
+            drawMap(data)
+        });
+    }
+
+
+    function drawMap(data) {
+        var container = L.DomUtil.get('map');
+        if(container != null){
+            container._leaflet_id = null;
+        }
+        proportions = data["proportions"]
+        map = L.map("map")
+        basemap = L.tileLayer("https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=9Co0whJiztPE0ruoiSfA", {
+            attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+            tileSize: 512,
+            zoomOffset: -1
+        });
+        basemap.addTo(map);
+        geoJSONlayer = L.geoJSON(data, {style: style, onEachFeature: onEachFeature});
+        geoJSONlayer.addTo(map);
+        map.fitBounds(geoJSONlayer.getBounds());
+
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+            this.update();
+            return this._div;
+        };
+
+        // method that we will use to update the control based on feature properties passed
+        info.update = function (props) {
+            if(props){
+                if(document.getElementById("type-picker").value === "pgr"){
+                    this._div.innerHTML = '<h4>Diebstähle</h4>' +
+                '<b>' + props.PGR_NAME + '</b><br/>' + (props.count > 0 ? props.count : 0);
+                }else if(document.getElementById("type-picker").value === "bzr"){
+                    this._div.innerHTML = '<h4>Diebstähle</h4>' +
+                '<b>' + props.BZR_NAME + '</b><br/>' + (props.count > 0 ? props.count : 0);
+                }else if(document.getElementById("type-picker").value === "plr"){
+                    this._div.innerHTML = '<h4>Diebstähle</h4>' +
+                '<b>' + props.PLR_NAME + '</b><br/>' + (props.count > 0 ? props.count : 0);
+                }
+            }else{
+                this._div.innerHTML = '<h4>Diebstähle</h4></b>Fahren Sie mit der Maus<br/> über ein Gebiet...'
+            }
+        };
+
+        info.addTo(map);
+
+        if(typeof legend !== 'undefined' ) {
+            map.removeControl(legend);
+        }
+
+        legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+
+            var div = L.DomUtil.create('div', 'info legend'),
+                props = proportions,
+                labels = [];
+            // loop through our density intervals and generate a label with a colored square for each interval
+            for (var i = 0; i < props.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(props[i] + 1) + '"></i> ' +
+                    props[i] + (props[i + 1] ? '&ndash;' + props[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+
+        legend.addTo(map);
+
+    }
+
+    function style(feature) {
+        return {
+            fillColor: getColor(feature.properties.count),
+            weight: 2,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.7
+        };
+    }
+
+    function getColor(d) {
+        return d > proportions[6] ? '#800026' :
+               d > proportions[5]  ? '#BD0026' :
+               d > proportions[4]  ? '#E31A1C' :
+               d > proportions[3]  ? '#FC4E2A' :
+               d > proportions[2]   ? '#FD8D3C' :
+               d > proportions[1]   ? '#FEB24C' :
+               d > proportions[0]   ? '#FED976' :
+                          '#FFEDA0';
+    }
+
+    const info = L.control();
+
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 5,
+            color: '#ffffff',
+            dashArray: '',
+            fillOpacity: 1
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+
+        info.update(layer.feature.properties);
+    }
+
+    function resetHighlight(e) {
+        geoJSONlayer.resetStyle(e.target);
+        info.update();
+    }
+
+    function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+    }
+
+    function onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: zoomToFeature
+        });
+    }
+
+</script>
+{% endblock content %}

@@ -1,0 +1,135 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Schadenshöhe nach Datum / Uhrzeit</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <!--
+          <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+          </div> -->
+          <div class="dropdown">
+          <select id="date-picker" class="form-select btn-outline-secondary" onchange="onDateChange(this)">
+              <option value="yesterday">Gestern</option>
+              <option value="last_seven">Letzte 7 Tage</option>
+              <option value="this_month">Diesen Monat</option>
+              <option value="all">Insgesamt</option>
+            </select>
+        </div>
+        </div>
+      </div>
+    <p>Die angegebenen Daten beziehen sich auf das Datum, an dem der Diebstahl polizeilich angelegt wurde. Das Datum spiegelt nicht den Tatzeitraum dar.</p>
+    <table id="missing-table" class="table">
+            <tr>
+                <td colspan="5" class="text-center">Keine Daten von gestern vorhanden. Die Daten werden um 12:00
+                    aktualisiert.
+                </td>
+            </tr>
+        </table>
+    <canvas class="my-4 " id="myChart" width="900" height="380"></canvas>
+    <hr>
+    <p>Die folgende Graphik bildet die Schadenshöhe auf die Stunden ab, die den <b>Tatzeitraum</b> darstellen. Zwei Beispiele:</p>
+        <ol>
+        <li>
+            Tatzeitraum 15.08.2021 11:00 bis 15.08.2021 13:00 --> Die Schadenshöhe wird gleichmäßig auf diese 3 Stunden verteilt.
+        </li>
+        <li>
+            Tatzeitraum 15.08.2021 11:00 bis 17:08.2021 13:00 --> Die Schadenshöhe wird gleichmäßig auf 50 Stunden verteilt.
+        </li>
+        </ol>
+    <canvas class="my-4 " id="myChartTime" width="900" height="380"></canvas>
+</main>
+<script>
+
+    function fetchData(startDate, endDate){
+        fetch("/api/DmgByDateForLine?start="+startDate+"&end="+endDate)
+                        .then(response => response.json())
+                        .then(function (data) {
+                            checkDataAvailability(data);
+                            xlabels = [];
+                            ylabels = [];
+                            data.forEach(d => {
+                                ylabels.push(convertDate(d["createdDay"]));
+                                xlabels.push(d["amount"]);
+                            })
+                            drawLineGraph(xlabels, ylabels);
+                        })
+
+        fetch("/api/DmgByTimeForLine?start="+startDate+"&end="+endDate)
+                        .then(response => response.json())
+                        .then(function (data) {
+                            checkDataAvailability(data);
+                            ylabels = Array.from(Array(24).keys());
+                            drawLineTimeGraph(data, ylabels);
+                        })
+    }
+
+    function drawLineGraph(xlabels, ylabels){
+        const sum = xlabels.reduce((a, b) => a + b, 0);
+        const avg = (sum / xlabels.length) || 0;
+        meanData = [];
+        for (let i = 0; i < xlabels.length; i++) {
+            meanData.push(avg);
+        }
+
+        ctx = document.getElementById('myChart').getContext('2d');
+        if(typeof myChart !== 'undefined' ){
+            if(myChart instanceof Chart)
+                myChart.destroy();
+        }
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ylabels,
+                datasets: [{
+                    label: 'Schadenshöhe',
+                    data: xlabels,
+                    backgroundColor:"lightblue",
+                    borderColor:"lightblue",
+                },
+                {
+                    label: 'Durchschnitt',
+                    data: meanData,
+                    backgroundColor:"lightgray",
+                    borderColor:"lightgray",
+                }]
+            },
+        });
+    }
+
+    function drawLineTimeGraph(xlabels, ylabels){
+        const sum = xlabels.reduce((a, b) => a + b, 0);
+        const avg = (sum / xlabels.length) || 0;
+        meanData = [];
+        for (let i = 0; i < xlabels.length; i++) {
+            meanData.push(avg);
+        }
+
+        ctxTime = document.getElementById('myChartTime').getContext('2d');
+        if(typeof myChartTime !== 'undefined' ){
+            if(myChartTime instanceof Chart)
+                myChartTime.destroy();
+        }
+        myChartTime = new Chart(ctxTime, {
+            type: 'line',
+            data: {
+                labels: ylabels,
+                datasets: [{
+                    label: 'Schadenshöhe',
+                    data: xlabels,
+                    backgroundColor:"lightblue",
+                    borderColor:"lightblue",
+                },
+                {
+                    label: 'Durchschnitt',
+                    data: meanData,
+                    backgroundColor:"lightgray",
+                    borderColor:"lightgray",
+                }]
+            },
+        });
+    }
+
+
+</script>
+{% endblock content %}

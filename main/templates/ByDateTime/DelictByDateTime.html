@@ -1,0 +1,100 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Delikt nach Datum / Uhrzeit</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <!--
+            <div class="btn-group me-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            </div> -->
+                <div class="dropdown">
+                    <select id="date-picker" class="form-select btn-outline-secondary" onchange="onDateChange(this)">
+                        <option value="yesterday">Gestern</option>
+                        <option value="last_seven">Letzte 7 Tage</option>
+                        <option value="this_month">Diesen Monat</option>
+                        <option value="all">Insgesamt</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <p>Die angegebenen Daten beziehen sich auf das Datum, an dem der Diebstahl polizeilich angelegt wurde. Das Datum
+            spiegelt nicht den Tatzeitraum dar.</p>
+        <table id="missing-table" class="table">
+            <tr>
+                <td colspan="5" class="text-center">Keine Daten von gestern vorhanden. Die Daten werden um 12:00
+                    aktualisiert.
+                </td>
+            </tr>
+        </table>
+        <canvas class="my-4 " id="myChartBar" width="900" height="380"></canvas>
+    </main>
+    <script>
+
+        function fetchData(startDate, endDate) {
+            fetch("/api/DelictByDateTimeForPie?start=" + startDate + "&end=" + endDate)
+                .then(response => response.json())
+                .then(function (data) {
+                    checkDataAvailability(data);
+                    dataForPlot = [];
+                    types = [];
+                    data.forEach(d => {
+                        if (!types.includes(d["delict"])) {
+                            types.push(d["delict"]);
+                        }
+                    })
+
+                    types.forEach(d => {
+                        dataPoint = [];
+                        data.forEach(j => {
+                            if (j["delict"] === d) {
+                                dataPoint.push({x: convertDate(j["createdDay"]), y: j["count"]});
+                            }
+                        });
+                        dataForPlot.push(dataPoint);
+                    });
+                    drawBarChart(types, dataForPlot);
+                })
+        }
+
+        function drawBarChart(labels, data) {
+            var backgroundColor = [
+                'rgb(57,255,230,0.2)',
+                'rgba(255, 99, 132, 0.2)'
+            ]
+            var borderColor = [
+                'rgb(57,255,230,1)',
+                'rgba(255, 99, 132, 1)'
+            ];
+            ctx = document.getElementById('myChartBar').getContext('2d');
+
+            datasets = [];
+            for (let i = 0; i < data.length; i++) {
+                datasets.push({
+                    label: labels[i],
+                    data: data[i],
+                    backgroundColor: backgroundColor[i],
+                    borderColor: borderColor[i],
+                    borderWidth: 1,
+                    hoverOffset: 20,
+                });
+            }
+            if (typeof chart !== 'undefined') {
+                if (chart instanceof Chart)
+                    chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    datasets: datasets,
+                },
+                options: {
+                    responsive: true,
+                }
+            });
+        }
+
+
+    </script>
+{% endblock content %}

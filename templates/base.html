@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Fahrraddiebstahl Berlin</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+
+    <link href="../../static/dashboard.css" rel="stylesheet">
+    <!-- MAP -->
+    <link rel="stylesheet" href="{% static 'leaflet.css' %}"/>
+    <script src="{% static 'leaflet.js' %}"></script>
+    <script src=" https://cdn.jsdelivr.net/npm/chart.js@3.5.1/dist/chart.min.js"></script>
+
+</head>
+<body>
+
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="{% url 'main' %}">Fahrraddiebstahl Berlin</a>
+    <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
+            aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</header>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'main' %}">
+                            <span data-feather="home"></span>
+                            Übersichtskarte
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Nach Datum / Uhrzeit</span>
+                </h6>
+
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'DelictByDateTime' %}">
+                            <span data-feather="file-text"></span>
+                            Delikt
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'ReasonByDateTime' %}">
+                            <span data-feather="file-text"></span>
+                            Erfassungsgrund
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'FahrradtypByDateTime' %}">
+                            <span data-feather="file-text"></span>
+                            Fahrradtypen
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'DmgByDateTime' %}">
+                            <span data-feather="file-text"></span>
+                            Schadenshöhe
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'TriesByDateTime' %}">
+                            <span data-feather="file-text"></span>
+                            Versuche
+                        </a>
+                    </li>
+                </ul>
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Weiteres</span>
+                </h6>
+                <ul class="nav flex-column mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'daten' %}">
+                            <small>Daten</small>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'Datenschutz' %}">
+                            <small>Datenschutzhinweise</small>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'Impressum' %}">
+                            <small>Impressum</small>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        {% block content %}{% endblock content %}
+    </div>
+</div>
+<script>
+
+
+    document.addEventListener("DOMContentLoaded", function (event) {
+        onDateChange(document.getElementById("date-picker"));
+    });
+
+    function convertDate(date) {
+        return date.substring(8, 11) + "." + date.substring(5, 7) + "." + date.substring(0, 4);
+    }
+
+    function onDateChange(selectObject) {
+        let startDate, endDate;
+        switch (selectObject.value) {
+            case "yesterday":
+                endDate = new Date().toJSON().slice(0, 10);
+                tmpDate = new Date();
+                tmpDate.setDate(tmpDate.getDate() - 1);
+                startDate = tmpDate.toJSON().slice(0, 10);
+                break;
+            case "last_seven":
+                endDate = new Date().toJSON().slice(0, 10);
+                tmpDate = new Date();
+                tmpDate.setDate(tmpDate.getDate() - 7);
+                startDate = tmpDate.toJSON().slice(0, 10);
+                break;
+            case "this_month":
+                endDate = new Date().toJSON().slice(0, 10);
+                tmpDate = new Date();
+                tmpDate.setDate(tmpDate.getDay() - (tmpDate.getDay() - 1));
+                startDate = tmpDate.toJSON().slice(0, 10);
+                break;
+            case "all":
+                endDate = new Date().toJSON().slice(0, 10);
+                startDate = "2020-01-01";
+                break;
+        }
+        if (!document.getElementById("map")) {
+            fetchData(startDate.toString(), endDate.toString());
+        } else {
+            fetchData(startDate.toString(), endDate.toString(), document.getElementById("type-picker").value);
+        }
+    }
+
+    function checkDataAvailability(data) {
+        tmp = document.getElementById("missing-table");
+        if (Object.keys(data).length !== 0) {
+            tmp.style.display = "none";
+        } else {
+            tmp.style.display = "table";
+        }
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ"
+        crossorigin="anonymous"></script>
+<script src="https://kit.fontawesome.com/beeeb98722.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@3.5.1/build/index.umd.min.js"></script>
+
+</body>
+</html>

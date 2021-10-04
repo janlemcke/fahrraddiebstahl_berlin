@@ -1,0 +1,108 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <h1>Daten</h1>
+        <p>Diese Seite verwendet die folgenden beiden Datensätze, welche unter der <a
+                href="https://creativecommons.org/licenses/by/3.0/de/" target="_blank">Creative Commons
+            Namensnennung</a> Lizenz verwendet werden dürfen.</p>
+        <h3>Fahrraddiebstahl Berlin</h3>
+        <p>Der Datensatz der Fahrraddiebstähle in Berlin werden von der Berliner Polizei herausgegeben und täglich
+            aktualisiert. Zu finden sind die Daten <a
+                    href="https://www.internetwache-polizei-berlin.de/vdb/Fahrraddiebstahl.csv" target="_blank">hier</a>.
+        </p>
+
+        <h3>Lebensweltlich orientierte Räume (LOR) in Berlin</h3>
+        <p>Dieser Datensatz gliedert Berlin in einzelne Bereiche. Der original Datensatz findet sich <a
+                href="https://www.stadtentwicklung.berlin.de/planen/basisdaten_stadtentwicklung/lor/de/download.shtml"
+                target="_blank">hier</a>. Für die einfachere Weiterverarbeitung wurden die Originaldaten in das
+            GeoJson-Format übertragen und leicht modifiziert.</p>
+
+    <hr>
+    <h5>Die folgende Tabelle zeigt die aktuellen Daten von gestern:</h5>
+        <table class="table" style="display: block;
+    overflow-x: auto;
+    white-space: nowrap;">
+            <tr>
+                <th></th>
+                <th>ANGELEGT_AM</th>
+                <th>TATZEIT_ANFANG_DATUM</th>
+                <th>TATZEIT_ANFANG_STUNDE</th>
+                <th>TATZEIT_ENDE_DATUM</th>
+                <th>TATZEIT_ENDE_STUNDE</th>
+                <th>LOR</th>
+                <th>SCHADENSHOEHE</th>
+                <th>VERSUCH</th>
+                <th>ART_DES_FAHRRADS</th>
+                <th>DELIKT</th>
+                <th>ERFASSUNGSGRUND</th>
+            </tr>
+            {% for e in object_list %}
+                <tr>
+                    <td></td>
+                    <td>
+                        {{ e.createdDay }}
+                    </td>
+                    <td>
+                        {{ e.beginDay }}
+                    </td>
+                    <td>
+                        {{ e.beginHour }}
+                    </td>
+                    <td>
+                        {{ e.endDay }}
+                    </td>
+                    <td>
+                        {{ e.endHour }}
+                    </td>
+                    <td>
+                        {{ e.lor }}
+                    </td>
+                    <td>
+                        {{ e.damage }}
+                    </td>
+                    <td>
+                        {{ e.tryBike }}
+                    </td>
+                    <td>
+                        {{ e.typeOfBike }}
+                    </td>
+                    <td>
+                        {{ e.delict }}
+                    </td>
+                    <td>
+                        {{ e.reason }}
+                    </td>
+
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Keine Daten von gestern vorhanden. Die Daten werden um 12:00
+                        aktualisiert.
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <nav>
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link"
+                                             href="?page={{ page_obj.previous_page_number }}">&laquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page=1">1</a></li>
+                {% endif %}
+
+                <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link"
+                                             href="?page={{ page_obj.paginator.num_pages }}">{{ page_obj.paginator.num_pages }}</a>
+                    </li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </nav>
+
+
+    </main>
+{% endblock content %}

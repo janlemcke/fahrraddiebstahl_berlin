@@ -22,3 +22,5 @@ urlpatterns = [
     path("daten", datenListView.as_view(), name="daten"),
 
 ]
+
+

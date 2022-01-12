@@ -67,14 +67,14 @@ def get_SchadenByTimeForLine(request):
         dayDifference = abs((i["beginDay"] - i["endDay"]).days)
         if dayDifference > 1:
             tmpDays = [0 for x in range(0, dayDifference * 24)]
-            amoundOfHours = (i['endHour'] - i['beginHour']) % 24
-            amoundOfHours += (dayDifference - 1) * 24
-            if amoundOfHours != 0:
-                avg = round(i["damage"] / amoundOfHours, 2)
+            amountOfHours = (i['endHour'] - i['beginHour']) % 24
+            amountOfHours += (dayDifference - 1) * 24
+            if amountOfHours != 0:
+                avg = round(i["damage"] / amountOfHours, 2)
             else:
                 avg = i["damage"]
 
-            for j in range(i["beginHour"], i["beginHour"] + amoundOfHours):
+            for j in range(i["beginHour"], i["beginHour"] + amountOfHours):
                 tmpDays[j % (24 * dayDifference)] += avg
 
             for k in range(0, len(tmpDays)):

@@ -31,7 +31,7 @@ def tweetStats():
     reports = Report.objects.filter(createdDay__gte=yesterday).values('typeOfBike').annotate(
         count=Count('typeOfBike')).order_by("count")
 
-    tweet = "Es wurden gestern folgende Fahrräder in Berlin geklaut:\n"
+    tweet = "Es wurden am "+ yesterday.strftime("%d.%m.%Y")+" folgende Fahrräder in Berlin als gestohlen gemeldet:\n"
     for data in reports:
         tweet += str(data["count"]) + "x " + data["typeOfBike"] + "\n"
     tweet += "\n[1/2]"
@@ -79,7 +79,6 @@ def tweetStats():
     tweet += str(round(proportion,4)*100) + "% der versuchten Diebstähle erfolgreich.\n\n"
     tweet += "Weitere Informationen findet ihr unter Fahrraddiebstahl-berlin.de\n\n[2/2]"
     api.update_status(tweet, answer.id)
-    api.update_profile("Tägliche News, wo und wie viele eurer Fahrräder geklaut wurden.\n\nLetzte Aktualisierung der Daten: " + yesterday.strftime("%d.%m.%Y"))
     print("Alle Tweets geposted!")
 
 @background(schedule=60)

@@ -4,7 +4,7 @@ from background_task import background
 
 
 class Command(BaseCommand):
-    help = 'Set background tasks.'
+    help = 'Delete all background tasks.'
 
     def handle(self, *args, **kwargs):
         number = background_task.models.Task.objects.all().count()
